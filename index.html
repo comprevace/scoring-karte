@@ -121,6 +121,11 @@
   .line.total{border-bottom:none;height:70px}
   .line.total .sum{font-size:30px;font-weight:800;letter-spacing:-.02em}
 
+  /* klassische Score-Notation: Kreis = unter Par, Quadrat = über Par */
+  .sc-mark{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:1.4em;height:1.4em;padding:0 .12em;line-height:1;border:1.5px solid currentColor}
+  .sc-mark.c1,.sc-mark.c2{border-radius:50%}
+  .sc-mark.c2,.sc-mark.s2{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px currentColor}
+
   /* ---- Karte ---- */
   table{width:100%;border-collapse:collapse}
   th,td{text-align:center;padding:9px 2px;font-size:13px}
@@ -331,7 +336,7 @@
       </div>
       <div class="hb">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 4H6l7 8-7 8h12"/></svg>
-        <p><b>Gesamt</b> · beide Spiele zusammen = dein Lochscore.</p>
+        <p><b>Gesamt</b> · beide Spiele zusammen = dein Lochscore.<br>○ Birdie · ◎ Eagle oder besser · □ Bogey · ▣ Doppel-Bogey oder mehr</p>
       </div>
     </div>
   </section>
@@ -413,6 +418,15 @@ function h(){return state.holes[cur];}
 function played(i){var x=state.holes[i];return x.esz!==null||x.dsz!==null;}
 function score(i){var x=state.holes[i];return played(i)?(x.esz||0)+(x.dsz||0):null;}
 function inReg(i){var x=state.holes[i];return x.esz!==null&&x.esz<=state.pars[i]-2;}
+function scHtml(i){
+  var t=score(i);
+  if(t===null)return "";
+  var x=state.holes[i];
+  if(x.esz===null||x.dsz===null)return ""+t;
+  var d=t-state.pars[i];
+  var mk=d<=-2?"c2":d===-1?"c1":d===1?"s1":d>=2?"s2":"";
+  return mk?"<span class='sc-mark "+mk+"'>"+t+"</span>":""+t;
+}
 function roundStats(holes,pars){
   var s={n:0,sc:0,par:0,szir:0,pen:0,tp:0,dszSum:0,dszN:0,exE:0,exD:0,fplL:0,fplN:0};
   holes.forEach(function(x,i){
@@ -449,7 +463,7 @@ function renderHole(){
   var t=score(cur);
   var ht=document.getElementById("holeTotal");
   if(t===null){ht.textContent="";ht.className="sum empty";}
-  else{ht.textContent=t;ht.className="sum";}
+  else{ht.innerHTML=scHtml(cur);ht.className="sum";}
   document.getElementById("prev").disabled=cur===0;
   document.getElementById("next").disabled=cur===H-1;
   var done=state.holes.filter(function(_,i){return played(i);}).length;
@@ -476,7 +490,7 @@ function renderCard(){
         +"<td class='"+(p?"":"mut")+"'>"+(x.dsz===null?"·":x.dsz)+"</td>"
         +"<td class='"+(x.pen?"pn":"mut")+"'>"+(x.pen||"·")+"</td>"
         +"<td class='"+(x.tp?"pn":"mut")+"'>"+(x.tp?"✕":"·")+"</td>"
-        +"<td>"+(score(i)===null?"":score(i))+"</td>";
+        +"<td>"+scHtml(i)+"</td>";
       tb.appendChild(tr);
       if(p){S.sc+=score(i);if(rg)S.szir++;S.dsz+=x.dsz||0;}
       S.pen+=x.pen;S.tp+=x.tp?1:0;
@@ -490,7 +504,8 @@ function renderCard(){
   tt.innerHTML="<td colspan='2'>Σ</td><td>"+T.szir+" ✓</td><td>"+T.dsz+"</td><td>"+T.pen+"</td><td>"+T.tp+"</td><td>"+T.sc+"</td>";
   tb.appendChild(tt);
   document.getElementById("cardLegend").innerHTML=
-    "◎ in die Zone · ✓ ≤ Par − 2 &nbsp;&nbsp;⚑ Zone → Loch, Soll 3 &nbsp;&nbsp;△ Strafen &nbsp;&nbsp;⇄ 3-Putt";
+    "◎ in die Zone · ✓ ≤ Par − 2 &nbsp;&nbsp;⚑ Zone → Loch, Soll 3 &nbsp;&nbsp;△ Strafen &nbsp;&nbsp;⇄ 3-Putt<br>"
+    +"○ Birdie · ◎ Eagle+ · □ Bogey · ▣ Doppel-Bogey+";
 }
 
 /* ---------- Auswertung ---------- */
