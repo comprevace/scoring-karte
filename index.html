@@ -119,7 +119,7 @@
   .switch.on::after{left:25px}
 
   .line.total{border-bottom:none;height:70px}
-  .line.total .sum{font-size:30px;font-weight:800;letter-spacing:-.02em}
+  .line.total .sum{font-size:30px;font-weight:800;letter-spacing:-.02em;margin-right:16px}
 
   /* klassische Score-Notation: Kreis = unter Par, Quadrat = über Par.
      Ring liegt als Overlay über der Ziffer, damit deren Position unverändert bleibt. */
@@ -180,6 +180,7 @@
   .insight{font-size:13px;color:var(--muted);line-height:1.55;margin-top:12px}
   .discard{display:flex;align-items:center;gap:7px;margin:28px auto 0;background:none;border:none;color:var(--bad);font:500 13px/1 inherit;cursor:pointer;padding:10px}
   .discard .ic{width:15px;height:15px}
+  .discard+.discard{margin-top:2px}
   .empty{color:var(--muted);font-size:14px;line-height:1.6;text-align:center;padding:40px 20px}
 
   /* ---- Footer ---- */
@@ -585,11 +586,21 @@ function renderEval(){
   }
 
   if(s.n>0)html+="<button class='discard' id='discardBtn'>"+IC.trash+"Runde verwerfen</button>";
+  html+="<button class='discard' id='resetBtn'>"+IC.rep+"Alles zurücksetzen</button>";
   c.innerHTML=html;
   var db=document.getElementById("discardBtn");
   if(db)db.addEventListener("click",function(){
     if(db.dataset.arm){clearRound();renderEval();}
     else{db.dataset.arm="1";db.innerHTML=IC.trash+"Sicher?";setTimeout(function(){if(db.isConnected){delete db.dataset.arm;db.innerHTML=IC.trash+"Runde verwerfen";}},3000);}
+  });
+  var rb=document.getElementById("resetBtn");
+  if(rb)rb.addEventListener("click",function(){
+    if(rb.dataset.arm){
+      var hp=state.help;
+      state=blank();state.help=hp;cur=0;
+      save();renderHole();renderEval();
+    }
+    else{rb.dataset.arm="1";rb.innerHTML=IC.rep+"Wirklich alles löschen (inkl. Verlauf)?";setTimeout(function(){if(rb.isConnected){delete rb.dataset.arm;rb.innerHTML=IC.rep+"Alles zurücksetzen";}},3000);}
   });
 }
 function cell(icon,em,v,cls){
