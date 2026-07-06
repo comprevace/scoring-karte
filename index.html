@@ -121,10 +121,13 @@
   .line.total{border-bottom:none;height:70px}
   .line.total .sum{font-size:30px;font-weight:800;letter-spacing:-.02em}
 
-  /* klassische Score-Notation: Kreis = unter Par, Quadrat = über Par */
-  .sc-mark{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:1.4em;height:1.4em;padding:0 .12em;line-height:1;border:1.5px solid currentColor}
-  .sc-mark.c1,.sc-mark.c2{border-radius:50%}
-  .sc-mark.c2,.sc-mark.s2{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px currentColor}
+  /* klassische Score-Notation: Kreis = unter Par, Quadrat = über Par.
+     Ring liegt als Overlay über der Ziffer, damit deren Position unverändert bleibt. */
+  .sc-mark{position:relative;display:inline-block}
+  .sc-mark::before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(100% + .55em);min-width:1.4em;height:1.4em;border:1.5px solid currentColor;pointer-events:none}
+  .sc-mark.c1::before,.sc-mark.c2::before{border-radius:50%}
+  .sc-mark.c2::before,.sc-mark.s2::before{box-shadow:0 0 0 2px var(--bg),0 0 0 3.25px currentColor}
+  .sc-mark.tb{color:var(--bad)}
 
   /* ---- Karte ---- */
   table{width:100%;border-collapse:collapse}
@@ -425,6 +428,7 @@ function scHtml(i){
   if(x.esz===null||x.dsz===null)return ""+t;
   var d=t-state.pars[i];
   var mk=d<=-2?"c2":d===-1?"c1":d===1?"s1":d>=2?"s2":"";
+  if(d>=3)mk+=" tb";
   return mk?"<span class='sc-mark "+mk+"'>"+t+"</span>":""+t;
 }
 function roundStats(holes,pars){
