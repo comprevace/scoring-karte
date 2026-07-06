@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0E2A1D">
+<title>Scoring Karte · Robin</title>
+<style>
+  :root{
+    --pine:#0E2A1D;
+    --pine-2:#143726;
+    --paper:#F6F4EC;
+    --paper-2:#EDEADF;
+    --ink:#1B2620;
+    --ink-soft:#5A6A60;
+    --line:#D8D4C4;
+    --esz:#2E7D4F;
+    --esz-soft:#DCEDE2;
+    --dsz:#B98A00;
+    --dsz-soft:#F5EBCE;
+    --flag:#BE4028;
+    --flag-soft:#F6E0DA;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--pine);
+    color:var(--ink);
+    font-variant-numeric:tabular-nums;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:520px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
+
+  /* ---------- Kopf ---------- */
+  header{
+    padding:18px 18px 12px;color:var(--paper);
+  }
+  .brand{display:flex;align-items:baseline;justify-content:space-between}
+  .brand h1{
+    font-size:15px;letter-spacing:.22em;text-transform:uppercase;font-weight:700;
+  }
+  .brand h1 span{color:#8FBF9F;font-weight:400}
+  .course{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7FA98D;margin-top:3px}
+  .save-state{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#5E8A6E}
+
+  /* ---------- Tabs ---------- */
+  nav{display:flex;gap:6px;padding:0 14px 12px}
+  nav button{
+    flex:1;border:1px solid rgba(246,244,236,.22);background:transparent;color:#BFD5C6;
+    font:600 12px/1 inherit;letter-spacing:.14em;text-transform:uppercase;
+    padding:11px 0;border-radius:999px;cursor:pointer;
+  }
+  nav button.active{background:var(--paper);color:var(--pine);border-color:var(--paper)}
+
+  main{flex:1;background:var(--paper);border-radius:22px 22px 0 0;padding:16px 14px 110px}
+  .view{display:none}
+  .view.active{display:block}
+
+  /* ---------- Loch-Eingabe ---------- */
+  .hole-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .hole-nav button{
+    width:52px;height:52px;border-radius:14px;border:1px solid var(--line);
+    background:#fff;font-size:22px;color:var(--ink);cursor:pointer;
+  }
+  .hole-nav button:disabled{opacity:.3}
+  .hole-title{text-align:center}
+  .hole-title .num{font-size:34px;font-weight:800;letter-spacing:-.02em}
+  .hole-title .par{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
+  .par-edit{display:inline-flex;gap:4px;margin-top:4px}
+  .par-edit button{
+    border:1px solid var(--line);background:#fff;border-radius:8px;
+    font:600 12px/1 inherit;padding:6px 10px;color:var(--ink-soft);cursor:pointer;
+  }
+  .par-edit button.on{background:var(--pine);color:var(--paper);border-color:var(--pine)}
+
+  .dots{display:flex;gap:3px;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
+  .dots i{width:14px;height:5px;border-radius:3px;background:var(--line)}
+  .dots i.done{background:var(--esz)}
+  .dots i.cur{background:var(--ink)}
+
+  .field{
+    background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+    padding:12px 14px;margin-bottom:10px;
+  }
+  .field .lab{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .field .lab b{font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+  .field .lab small{font-size:11px;color:var(--ink-soft)}
+  .field.esz{border-left:5px solid var(--esz)}
+  .field.dsz{border-left:5px solid var(--dsz)}
+  .field.pen{border-left:5px solid var(--flag)}
+
+  .stepper{display:flex;align-items:center;gap:12px}
+  .stepper button{
+    width:56px;height:56px;border-radius:14px;border:none;font-size:26px;font-weight:600;
+    cursor:pointer;color:#fff;flex:none;
+  }
+  .esz .stepper button{background:var(--esz)}
+  .dsz .stepper button{background:var(--dsz)}
+  .pen .stepper button{background:var(--flag)}
+  .stepper button.minus{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
+  .stepper .val{flex:1;text-align:center;font-size:38px;font-weight:800}
+  .stepper .val.empty{color:#C9C4B2;font-size:24px;font-weight:600}
+
+  .seg{display:flex;gap:6px}
+  .seg button{
+    flex:1;padding:12px 0;border-radius:10px;border:1.5px solid var(--line);
+    background:#fff;font:600 13px/1 inherit;color:var(--ink-soft);cursor:pointer;
+  }
+  .seg button.on{background:var(--pine);border-color:var(--pine);color:var(--paper)}
+
+  .toggle3p{display:flex;align-items:center;justify-content:space-between;background:#fff;
+    border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+  .toggle3p b{font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+  .switch{width:58px;height:32px;border-radius:999px;background:var(--line);border:none;position:relative;cursor:pointer;transition:background .15s}
+  .switch::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:left .15s}
+  .switch.on{background:var(--flag)}
+  .switch.on::after{left:29px}
+
+  .hole-sum{
+    display:flex;justify-content:space-between;align-items:center;
+    background:var(--pine);color:var(--paper);border-radius:var(--radius);padding:14px 16px;
+  }
+  .hole-sum b{font-size:26px;font-weight:800}
+  .hole-sum span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9DC3AB}
+
+  /* ---------- Scorecard-Tabelle ---------- */
+  .card-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .card-wrap{border-radius:var(--radius);overflow:hidden;border:1px solid var(--line)}
+  .card-table th,.card-table td{padding:8px 4px;text-align:center;font-size:13px;border-bottom:1px solid #EFECDF}
+  .card-table th{
+    background:var(--pine);color:var(--paper);font-size:10px;letter-spacing:.1em;
+    text-transform:uppercase;font-weight:600;padding:9px 4px;
+  }
+  .card-table td:first-child{font-weight:700}
+  .card-table tr.sub td{background:var(--paper-2, #EDEADF);font-weight:700;border-top:2px solid var(--line)}
+  .card-table .c-esz{color:var(--esz);font-weight:700}
+  .card-table .c-dsz{color:var(--dsz);font-weight:700}
+  .card-table .c-pen{color:var(--flag);font-weight:700}
+  .card-table .mut{color:#C9C4B2}
+  .tot-row td{background:var(--pine)!important;color:var(--paper);font-weight:800;font-size:14px}
+
+  .legend{display:flex;gap:14px;margin:10px 2px 0;flex-wrap:wrap}
+  .legend span{font-size:11px;color:var(--ink-soft);display:flex;align-items:center;gap:5px}
+  .legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+  /* ---------- Training ---------- */
+  .split{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+  .split h3{font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:4px}
+  .split p.sub{font-size:12px;color:var(--ink-soft);margin-bottom:14px}
+  .bar{display:flex;height:44px;border-radius:10px;overflow:hidden;margin-bottom:8px}
+  .bar div{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;min-width:44px;transition:width .3s}
+  .bar .b-esz{background:var(--esz)}
+  .bar .b-dsz{background:var(--dsz)}
+  .bar-lab{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+  .verdict{margin-top:12px;font-size:14px;line-height:1.5}
+  .verdict b{color:var(--pine)}
+
+  .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:12px}
+  .stat .v{font-size:26px;font-weight:800}
+  .stat .k{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin-top:2px}
+  .stat.warn .v{color:var(--flag)}
+
+  .drill{
+    background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;
+  }
+  .drill .rank{
+    width:30px;height:30px;border-radius:50%;background:var(--pine);color:var(--paper);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex:none;margin-top:2px;
+  }
+  .drill h4{font-size:14px;margin-bottom:3px}
+  .drill p{font-size:13px;color:var(--ink-soft);line-height:1.45}
+  .empty-note{font-size:13px;color:var(--ink-soft);text-align:center;padding:30px 10px;line-height:1.5}
+
+  /* ---------- Fußleiste ---------- */
+  .footer{
+    position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;
+    display:flex;gap:10px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+    background:linear-gradient(to top,var(--paper) 75%,transparent);
+  }
+  .footer .score-pill{
+    flex:1;background:var(--pine);color:var(--paper);border-radius:999px;
+    display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;font-size:16px;
+  }
+  .footer .score-pill small{font-weight:600;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#9DC3AB}
+  .footer .reset{
+    border:none;background:var(--flag);color:#fff;border-radius:999px;
+    font:700 12px/1 inherit;letter-spacing:.1em;text-transform:uppercase;
+    padding:0 20px;height:52px;cursor:pointer;
+  }
+  .footer .reset.confirm{background:#7E1F10;animation:pulse .8s infinite alternate}
+  @keyframes pulse{from{opacity:1}to{opacity:.75}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>Scoring<span> Karte</span></h1>
+      <div class="save-state" id="saveState">Gespeichert</div>
+    </div>
+    <div class="course">GC Mainsondheim · ESZ / DSZ Tracking</div>
+  </header>
+
+  <nav>
+    <button class="active" data-view="v-hole">Loch</button>
+    <button data-view="v-card">Karte</button>
+    <button data-view="v-train">Training</button>
+  </nav>
+
+  <main>
+    <!-- ============ LOCH ============ -->
+    <section class="view active" id="v-hole">
+      <div class="hole-nav">
+        <button id="prevHole" aria-label="Vorheriges Loch">&#8249;</button>
+        <div class="hole-title">
+          <div class="num">Loch <span id="holeNum">1</span></div>
+          <div class="par">Par w&#228;hlen</div>
+          <div class="par-edit" id="parEdit">
+            <button data-par="3">3</button>
+            <button data-par="4">4</button>
+            <button data-par="5">5</button>
+          </div>
+        </div>
+        <button id="nextHole" aria-label="N&#228;chstes Loch">&#8250;</button>
+      </div>
+      <div class="dots" id="dots"></div>
+
+      <div class="field esz">
+        <div class="lab"><b>In die Scoring Zone</b><small>Schl&#228;ge bis ~90 m ans Gr&#252;n</small></div>
+        <div class="stepper">
+          <button class="minus" data-f="esz" data-d="-1">&#8722;</button>
+          <div class="val" id="v-esz">&#8211;</div>
+          <button data-f="esz" data-d="1">+</button>
+        </div>
+      </div>
+
+      <div class="field dsz">
+        <div class="lab"><b>Down in der Zone</b><small>Schl&#228;ge von dort ins Loch</small></div>
+        <div class="stepper">
+          <button class="minus" data-f="dsz" data-d="-1">&#8722;</button>
+          <div class="val" id="v-dsz">&#8211;</div>
+          <button data-f="dsz" data-d="1">+</button>
+        </div>
+      </div>
+
+      <div class="field pen">
+        <div class="lab"><b>Strafschl&#228;ge</b><small>Aus / Wasser / unspielbar</small></div>
+        <div class="stepper">
+          <button class="minus" data-f="pen" data-d="-1">&#8722;</button>
+          <div class="val" id="v-pen">&#8211;</div>
+          <button data-f="pen" data-d="1">+</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="lab"><b>Erster Putt</b><small>L&#228;nge nach Ann&#228;herung</small></div>
+        <div class="seg" id="fplSeg">
+          <button data-fpl="0">&lt; 1 m</button>
+          <button data-fpl="1">1&#8211;3 m</button>
+          <button data-fpl="2">3&#8211;6 m</button>
+          <button data-fpl="3">&gt; 6 m</button>
+        </div>
+      </div>
+
+      <div class="toggle3p">
+        <b>3-Putt (oder mehr)</b>
+        <button class="switch" id="tpSwitch" aria-label="3-Putt umschalten"></button>
+      </div>
+
+      <div class="hole-sum">
+        <span>Loch gesamt</span>
+        <b id="holeTotal">&#8211;</b>
+      </div>
+    </section>
+
+    <!-- ============ KARTE ============ -->
+    <section class="view" id="v-card">
+      <div class="card-wrap">
+      <table class="card-table">
+        <thead>
+          <tr><th>Loch</th><th>Par</th><th>ESZ</th><th>DSZ</th><th>Str.</th><th>3P</th><th>Score</th></tr>
+        </thead>
+        <tbody id="cardBody"></tbody>
+      </table>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--esz)"></i>ESZ = bis in die Zone</span>
+        <span><i style="background:var(--dsz)"></i>DSZ = Zone bis ins Loch</span>
+        <span><i style="background:var(--flag)"></i>Str. = Strafschl&#228;ge</span>
+      </div>
+    </section>
+
+    <!-- ============ TRAINING ============ -->
+    <section class="view" id="v-train">
+      <div id="trainContent"></div>
+    </section>
+  </main>
+
+  <div class="footer">
+    <div class="score-pill"><small>Runde</small><span id="footScore">0</span><small id="footVsPar"></small></div>
+    <button class="reset" id="resetBtn">Reset</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var HOLES=18, KEY="tsm-scorecard-v1";
+  var state=null, cur=0, resetArmed=false, resetTimer=null, memStore={};
+
+  function blankState(){
+    var h=[];for(var i=0;i<HOLES;i++)h.push({esz:null,dsz:null,pen:0,fpl:null,tp:false});
+    return {pars:defaultPars(), holes:h};
+  }
+  function defaultPars(){var p=[];for(var i=0;i<HOLES;i++)p.push(4);return p;}
+
+  /* ---------- Persistenz: window.storage -> localStorage -> Speicher ---------- */
+  function setSaveLabel(t){document.getElementById("saveState").textContent=t;}
+  async function save(){
+    var data=JSON.stringify(state);
+    try{
+      if(window.storage&&window.storage.set){await window.storage.set(KEY,data);setSaveLabel("Gespeichert");return;}
+    }catch(e){}
+    try{localStorage.setItem(KEY,data);setSaveLabel("Gespeichert");return;}catch(e){}
+    memStore[KEY]=data;setSaveLabel("Nur Sitzung");
+  }
+  async function load(){
+    try{
+      if(window.storage&&window.storage.get){
+        var r=await window.storage.get(KEY);
+        if(r&&r.value)return JSON.parse(r.value);
+      }
+    }catch(e){}
+    try{var l=localStorage.getItem(KEY);if(l)return JSON.parse(l);}catch(e){}
+    if(memStore[KEY])return JSON.parse(memStore[KEY]);
+    return null;
+  }
+  async function clearStore(){
+    try{if(window.storage&&window.storage.delete){await window.storage.delete(KEY);}}catch(e){}
+    try{localStorage.removeItem(KEY);}catch(e){}
+    delete memStore[KEY];
+  }
+
+  /* ---------- Hilfen ---------- */
+  function h(){return state.holes[cur];}
+  function holeScore(i){
+    var x=state.holes[i];
+    if(x.esz===null&&x.dsz===null)return null;
+    return (x.esz||0)+(x.dsz||0);
+  }
+  function played(i){var x=state.holes[i];return x.esz!==null||x.dsz!==null;}
+
+  /* ---------- Loch-Ansicht ---------- */
+  function renderHole(){
+    document.getElementById("holeNum").textContent=cur+1;
+    var pe=document.getElementById("parEdit").children;
+    for(var i=0;i<pe.length;i++)pe[i].classList.toggle("on",+pe[i].dataset.par===state.pars[cur]);
+    var x=h();
+    setVal("v-esz",x.esz);setVal("v-dsz",x.dsz);
+    var pv=document.getElementById("v-pen");
+    pv.textContent=x.pen===0?"0":x.pen;pv.classList.toggle("empty",false);
+    var seg=document.getElementById("fplSeg").children;
+    for(var j=0;j<seg.length;j++)seg[j].classList.toggle("on",x.fpl===+seg[j].dataset.fpl);
+    document.getElementById("tpSwitch").classList.toggle("on",x.tp);
+    var t=holeScore(cur);
+    document.getElementById("holeTotal").textContent=t===null?"–":t+(x.pen?" ("+x.pen+" Str.)":"");
+    document.getElementById("prevHole").disabled=cur===0;
+    document.getElementById("nextHole").disabled=cur===HOLES-1;
+    renderDots();renderFooter();
+  }
+  function setVal(id,v){
+    var el=document.getElementById(id);
+    if(v===null){el.textContent="–";el.classList.add("empty");}
+    else{el.textContent=v;el.classList.remove("empty");}
+  }
+  function renderDots(){
+    var d=document.getElementById("dots");d.innerHTML="";
+    for(var i=0;i<HOLES;i++){
+      var s=document.createElement("i");
+      if(played(i))s.className="done";
+      if(i===cur)s.className+=" cur";
+      d.appendChild(s);
+    }
+  }
+
+  /* ---------- Karte ---------- */
+  function renderCard(){
+    var tb=document.getElementById("cardBody");tb.innerHTML="";
+    var halves=[[0,9,"Front 9"],[9,18,"Back 9"]];
+    var T={par:0,esz:0,dsz:0,pen:0,tp:0,sc:0};
+    halves.forEach(function(hf){
+      var S={par:0,esz:0,dsz:0,pen:0,tp:0,sc:0};
+      for(var i=hf[0];i<hf[1];i++){
+        var x=state.holes[i],tr=document.createElement("tr"),p=played(i);
+        tr.innerHTML="<td>"+(i+1)+"</td><td>"+state.pars[i]+"</td>"
+          +"<td class='"+(p?"c-esz":"mut")+"'>"+(x.esz===null?"·":x.esz)+"</td>"
+          +"<td class='"+(p?"c-dsz":"mut")+"'>"+(x.dsz===null?"·":x.dsz)+"</td>"
+          +"<td class='"+(x.pen?"c-pen":"mut")+"'>"+(x.pen||"·")+"</td>"
+          +"<td class='"+(x.tp?"c-pen":"mut")+"'>"+(x.tp?"✕":"·")+"</td>"
+          +"<td><b>"+(holeScore(i)===null?"·":holeScore(i))+"</b></td>";
+        tb.appendChild(tr);
+        if(p){S.par+=state.pars[i];S.esz+=x.esz||0;S.dsz+=x.dsz||0;S.sc+=holeScore(i);}
+        S.pen+=x.pen;S.tp+=x.tp?1:0;
+      }
+      var st=document.createElement("tr");st.className="sub";
+      st.innerHTML="<td colspan='2'>"+hf[2]+"</td><td>"+S.esz+"</td><td>"+S.dsz+"</td><td>"+S.pen+"</td><td>"+S.tp+"</td><td>"+S.sc+"</td>";
+      tb.appendChild(st);
+      T.par+=S.par;T.esz+=S.esz;T.dsz+=S.dsz;T.pen+=S.pen;T.tp+=S.tp;T.sc+=S.sc;
+    });
+    var tt=document.createElement("tr");tt.className="tot-row";
+    tt.innerHTML="<td colspan='2'>Gesamt</td><td>"+T.esz+"</td><td>"+T.dsz+"</td><td>"+T.pen+"</td><td>"+T.tp+"</td><td>"+T.sc+"</td>";
+    tb.appendChild(tt);
+  }
+
+  /* ---------- Training (Purposeful Practice) ---------- */
+  function renderTrain(){
+    var c=document.getElementById("trainContent");
+    var pl=state.holes.map(function(x,i){return{x:x,i:i};}).filter(function(o){return played(o.i);});
+    if(pl.length===0){
+      c.innerHTML="<div class='empty-note'>Noch keine Daten.<br>Trag zuerst ein paar Löcher unter <b>Loch</b> ein – die Trainingskarte füllt sich dann automatisch aus deiner Runde.</div>";
+      return;
+    }
+    var exESZ=0,exDSZ=0,pen=0,tp=0,fplLong=0,fplAll=0;
+    pl.forEach(function(o){
+      var base=state.pars[o.i]-2;
+      if(o.x.esz!==null)exESZ+=Math.max(0,o.x.esz-base);
+      if(o.x.dsz!==null)exDSZ+=Math.max(0,o.x.dsz-3);
+      pen+=o.x.pen; tp+=o.x.tp?1:0;
+      if(o.x.fpl!==null){fplAll++;if(o.x.fpl>=2)fplLong++;}
+    });
+    var lost=exESZ+exDSZ;
+    var pE=lost?Math.round(exESZ/lost*100):50, pD=100-pE;
+    var n=pl.length;
+
+    var verdict;
+    if(lost===0)verdict="Saubere Runde nach Scoring-Method-Maßstab – beide Spiele im Soll. <b>Jetzt einen Gang hochschalten.</b>";
+    else if(pE>=60)verdict="Deine Schläge gehen vor allem im <b>Spiel 1 (in die Zone kommen)</b> verloren – Tee-Strategie und sicherer Ballkontakt zählen mehr als das Kurzspiel.";
+    else if(pD>=60)verdict="Deine Schläge gehen vor allem im <b>Spiel 2 (Zone bis Loch)</b> verloren – Wedges und Putten sind gerade dein größter Hebel.";
+    else verdict="Die verlorenen Schläge verteilen sich <b>etwa gleich</b> auf beide Spiele – unten steht, was zuerst dran ist.";
+
+    var html=
+      "<div class='split'>"+
+        "<h3>Zwei Spiele – wo verlierst du?</h3>"+
+        "<p class='sub'>"+lost+" Schläge über Soll (ESZ-Basis: Par − 2 · DSZ-Basis: 3) bei "+n+" Löchern</p>"+
+        "<div class='bar'>"+
+          (exESZ?"<div class='b-esz' style='width:"+pE+"%'>"+exESZ+"</div>":"")+
+          (exDSZ?"<div class='b-dsz' style='width:"+pD+"%'>"+exDSZ+"</div>":"")+
+          (lost===0?"<div class='b-esz' style='width:100%'>0</div>":"")+
+        "</div>"+
+        "<div class='bar-lab'><span>Spiel 1 · in die Zone</span><span>Spiel 2 · Zone → Loch</span></div>"+
+        "<p class='verdict'>"+verdict+"</p>"+
+      "</div>"+
+      "<div class='statgrid'>"+
+        stat(pen,"Strafschläge",pen>0)+
+        stat(tp,"3-Putts",tp>=Math.max(2,n/6))+
+        stat((exDSZ/n).toFixed(1).replace(".",","),"DSZ über Soll / Loch",false)+
+        stat(fplAll?Math.round(fplLong/fplAll*100)+"%":"–","Erste Putts > 3 m",fplAll&&fplLong/fplAll>0.5)+
+      "</div>"+
+      "<h3 style='font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin:4px 2px 10px'>Dein Übungsplan</h3>";
+
+    var drills=[];
+    if(pen>0)drills.push({s:pen*3,t:"Strafschläge eliminieren",
+      d:pen+" Strafschläge ≈ "+(pen*2)+"+ verlorene Schläge. Nächste Runde: Go-To-Schläger vom Tee (nicht der Driver, wenn er streut) und nie über Wasser/Aus schneiden. Ziel: 18 Löcher ohne Strafe."});
+    if(tp>=2)drills.push({s:tp*2,t:"Tempo-Putten auf der Wellputt-Matte",
+      d:tp+" 3-Putts. 20 Min: Putts auf 2 m und 3 m, Ziel ist die Endzone hinter dem Loch – Tempo vor Linie. Danach 10× 1-m-Putts in den PuttOUT als Abschluss."});
+    if(fplAll&&fplLong/fplAll>0.4)drills.push({s:4+fplLong,t:"Wedge-Distanzen kalibrieren",
+      d:"Deine ersten Putts sind oft lang – das ist ein Annäherungs-Problem. Auf der Range: je 10 Bälle auf 30 / 50 / 70 m mit einem Schläger und drei Schwunglängen. Notiere die Carry-Distanzen."});
+    if(exDSZ>exESZ)drills.push({s:exDSZ,t:"Einfach chippen, sicher aufs Grün",
+      d:"Standard-Chip mit einem Schläger (z. B. PW): Ball zurück, Hände vor, Grün treffen und ausrollen lassen. Kein Flop, kein Held. 30 Wiederholungen auf ein 3-m-Ziel."});
+    if(exESZ>=exDSZ&&exESZ>0)drills.push({s:exESZ,t:"Sicher in die Zone – Kontakt vor Länge",
+      d:"Dein Engpass ist Spiel 1. Kombiniere mit deinem Porzak-Training: kontrollierter Dreiviertel-Schwung mit dem 7er/8er, Ziel ist Mitte Fairway. Lieber zwei sichere Schläge als ein riskanter."});
+    drills.sort(function(a,b){return b.s-a.s;});
+    if(drills.length===0)drills.push({s:0,t:"Einen Gang hochschalten",d:"Beide Spiele im Soll – rücke die Zone näher: Ziel ist jetzt, in Regulation auf 75 m statt 100 m zu kommen, und der DSZ-Standard sinkt auf unter 3."});
+    drills.slice(0,4).forEach(function(d,i){
+      html+="<div class='drill'><div class='rank'>"+(i+1)+"</div><div><h4>"+d.t+"</h4><p>"+d.d+"</p></div></div>";
+    });
+    c.innerHTML=html;
+  }
+  function stat(v,k,warn){return "<div class='stat"+(warn?" warn":"")+"'><div class='v'>"+v+"</div><div class='k'>"+k+"</div></div>";}
+
+  /* ---------- Fußleiste ---------- */
+  function renderFooter(){
+    var sc=0,par=0,any=false;
+    for(var i=0;i<HOLES;i++){if(played(i)){sc+=holeScore(i);par+=state.pars[i];any=true;}}
+    document.getElementById("footScore").textContent=sc;
+    var vp=document.getElementById("footVsPar");
+    if(!any){vp.textContent="";return;}
+    var d=sc-par;vp.textContent=(d>0?"+":"")+d+" vs Par";
+  }
+
+  /* ---------- Events ---------- */
+  document.querySelectorAll("nav button").forEach(function(b){
+    b.addEventListener("click",function(){
+      document.querySelectorAll("nav button").forEach(function(x){x.classList.remove("active");});
+      document.querySelectorAll(".view").forEach(function(x){x.classList.remove("active");});
+      b.classList.add("active");
+      document.getElementById(b.dataset.view).classList.add("active");
+      if(b.dataset.view==="v-card")renderCard();
+      if(b.dataset.view==="v-train")renderTrain();
+    });
+  });
+  document.getElementById("prevHole").addEventListener("click",function(){if(cur>0){cur--;renderHole();}});
+  document.getElementById("nextHole").addEventListener("click",function(){if(cur<HOLES-1){cur++;renderHole();}});
+  document.getElementById("parEdit").addEventListener("click",function(e){
+    var p=e.target.dataset&&e.target.dataset.par;if(!p)return;
+    state.pars[cur]=+p;save();renderHole();
+  });
+  document.querySelectorAll(".stepper button").forEach(function(b){
+    b.addEventListener("click",function(){
+      var f=b.dataset.f,d=+b.dataset.d,x=h();
+      if(f==="pen"){x.pen=Math.max(0,x.pen+d);}
+      else{
+        var v=x[f];
+        if(v===null)v=(d>0?(f==="esz"?1:1):null);
+        else{v+=d;if(v<=0)v=null;}
+        if(v!==null&&v>15)v=15;
+        x[f]=v;
+      }
+      save();renderHole();
+    });
+  });
+  document.getElementById("fplSeg").addEventListener("click",function(e){
+    var v=e.target.dataset&&e.target.dataset.fpl;if(v===undefined)return;
+    var x=h();x.fpl=(x.fpl===+v)?null:+v;save();renderHole();
+  });
+  document.getElementById("tpSwitch").addEventListener("click",function(){
+    h().tp=!h().tp;save();renderHole();
+  });
+  document.getElementById("resetBtn").addEventListener("click",function(){
+    var b=document.getElementById("resetBtn");
+    if(!resetArmed){
+      resetArmed=true;b.textContent="Sicher?";b.classList.add("confirm");
+      resetTimer=setTimeout(function(){resetArmed=false;b.textContent="Reset";b.classList.remove("confirm");},3000);
+      return;
+    }
+    clearTimeout(resetTimer);resetArmed=false;
+    b.textContent="Reset";b.classList.remove("confirm");
+    var pars=state.pars.slice();
+    state=blankState();state.pars=pars;cur=0;
+    clearStore().then(save);
+    renderHole();renderCard();renderTrain();
+  });
+
+  /* ---------- Start ---------- */
+  load().then(function(s){
+    state=s||blankState();
+    if(!state.pars||state.pars.length!==HOLES)state.pars=defaultPars();
+    if(!state.holes||state.holes.length!==HOLES)state=blankState();
+    renderHole();
+  });
+})();
+</script>
+</body>
+</html>
