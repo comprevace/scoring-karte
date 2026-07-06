@@ -678,7 +678,7 @@ load().then(function(v){
   if(!state.pars||state.pars.length!==H)state.pars=Array(H).fill(4);
   if(!state.holes||state.holes.length!==H)state.holes=blankHoles();
   if(!state.history)state.history=[];
-  if(state.help===undefined)state.help=true; /* beim ersten Start eingeblendet */
+  if(state.help===undefined)state.help=false; /* beim ersten Start ausgeblendet */
   document.querySelector(".app").classList.toggle("explain",state.help);
   save();
   renderHole();
