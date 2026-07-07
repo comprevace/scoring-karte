@@ -168,6 +168,11 @@
   .cell .v.warn{color:var(--bad)}
   .cell .v.good{color:var(--ok)}
 
+  .goalbox{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border:1px solid var(--line);border-radius:12px;font-size:14px;line-height:1.4}
+  .goalbox .gst{font-weight:700;white-space:nowrap;color:var(--muted)}
+  .goalbox .gst.ck{color:var(--ok)}
+  .goalbox .gst.pn{color:var(--bad)}
+
   .drill{padding:14px 0;border-bottom:1px solid var(--line);display:flex;gap:14px}
   .drill:last-child{border-bottom:none}
   .drill .n{font-size:13px;font-weight:800;color:var(--muted);margin-top:2px;flex:none;width:16px}
@@ -389,6 +394,7 @@ var IC={
   gauge:svg('<circle cx="12" cy="12" r="9"/><path d="M12 12V6"/><path d="M12 12l4.5 2.5"/>'),
   train:svg('<path d="M6 7v10M18 7v10"/><rect x="3" y="9" width="3" height="6" rx="1"/><rect x="18" y="9" width="3" height="6" rx="1"/><path d="M6 12h12"/>'),
   hist:svg('<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>'),
+  goal:svg('<path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M17 5h3a2 2 0 0 1-2 3h-1"/><path d="M7 5H4a2 2 0 0 0 2 3h1"/>'),
   sig:svg('<path d="M18 4H6l7 8-7 8h12"/>'),
   trash:svg('<path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>')
 };
@@ -447,20 +453,46 @@ function roundStats(holes,pars){
   s.dszAvg=s.dszN?s.dszSum/s.dszN:0;
   return s;
 }
-function drillsHtml(v){
+function drillList(v){
   var dr=[];
-  if(v.pen>0)dr.push({w:v.pen*3,t:"Null-Strafen-Challenge",d:v.pen+" Strafschläge ≈ "+(v.pen*2)+"+ verlorene Schläge. Nächste Runde zählt nur eins: keine Strafe, kein seitliches Rausschlagen. Go-To-Schläger vom Tee."});
-  if(v.tp>=2)dr.push({w:v.tp*2,t:"Tempo-Putts (Wellputt)",d:v.tp+" 3-Putts. 20 Min Lag-Putts aus 2–3 m: ankommen, max. 50 cm vorbei. Abschluss: 10/10 aus 1 m in den PuttOUT."});
-  if(v.fplN&&v.fplL/v.fplN>0.4)dr.push({w:4+v.fplL,t:"Wedge-Distanzen kalibrieren",d:"Erste Putts zu lang = Annäherungsproblem. Je 10 Bälle auf 30/50/70 m, drei Schwunglängen, Carrys notieren."});
-  if(v.exD>v.exE)dr.push({w:v.exD,t:"Ein Chip, ein Schläger",d:"Standard-Chip mit dem PW: Ball zurück, Hände vor, Grün treffen, rollen lassen. 30 Wiederholungen auf ein 3-m-Ziel."});
-  if(v.exE>=v.exD&&v.exE>0)dr.push({w:v.exE,t:"Kontakt vor Länge",d:"Engpass ist Spiel 1 – das ist Schwungtraining: kontrollierter ¾-Schwung mit dem 7er/8er, Ziel Mitte Fairway."});
-  if(!dr.length)dr.push({w:0,t:"Einen Gang hochschalten",d:"Alles im Soll. Neues Ziel: in Regulation auf 75 m statt 90 m, DSZ-Soll unter 3."});
+  if(v.pen>0)dr.push({id:"pen",w:v.pen*3,t:"Null-Strafen-Challenge",d:v.pen+" Strafschläge ≈ "+(v.pen*2)+"+ verlorene Schläge. Nächste Runde zählt nur eins: keine Strafe, kein seitliches Rausschlagen. Go-To-Schläger vom Tee."});
+  if(v.tp>=2)dr.push({id:"tp",w:v.tp*2,t:"Tempo-Putts (Wellputt)",d:v.tp+" 3-Putts. 20 Min Lag-Putts aus 2–3 m: ankommen, max. 50 cm vorbei. Abschluss: 10/10 aus 1 m in den PuttOUT."});
+  if(v.fplN&&v.fplL/v.fplN>0.4)dr.push({id:"fpl",w:4+v.fplL,t:"Wedge-Distanzen kalibrieren",d:"Erste Putts zu lang = Annäherungsproblem. Je 10 Bälle auf 30/50/70 m, drei Schwunglängen, Carrys notieren."});
+  if(v.exD>v.exE)dr.push({id:"exD",w:v.exD,t:"Ein Chip, ein Schläger",d:"Standard-Chip mit dem PW: Ball zurück, Hände vor, Grün treffen, rollen lassen. 30 Wiederholungen auf ein 3-m-Ziel."});
+  if(v.exE>=v.exD&&v.exE>0)dr.push({id:"exE",w:v.exE,t:"Kontakt vor Länge",d:"Engpass ist Spiel 1 – das ist Schwungtraining: kontrollierter ¾-Schwung mit dem 7er/8er, Ziel Mitte Fairway."});
+  if(!dr.length)dr.push({id:"level",w:0,t:"Einen Gang hochschalten",d:"Alles im Soll. Neues Ziel: in Regulation auf 75 m statt 90 m, DSZ-Soll unter 3."});
   dr.sort(function(a,b){return b.w-a.w;});
+  return dr;
+}
+function drillsHtml(v){
   var h="";
-  dr.slice(0,3).forEach(function(d,i){
+  drillList(v).slice(0,3).forEach(function(d,i){
     h+="<div class='drill'><div class='n'>"+(i+1)+"</div><div><h4>"+d.t+"</h4><p>"+d.d+"</p></div></div>";
   });
   return h;
+}
+/* Ziel = messbare Version von Tipp Nr. 1, wird an der nächsten Runde geprüft */
+function goalFrom(v){
+  var top=drillList(v)[0];
+  switch(top.id){
+    case "pen":return {id:"pen",label:"Keine Strafschläge",base:{}};
+    case "tp":return {id:"tp",label:"Höchstens "+(v.tp-1)+" 3-Putt"+(v.tp-1===1?"":"s"),base:{tp:v.tp}};
+    case "fpl":var r=v.fplL/v.fplN;return {id:"fpl",label:"Weniger erste Putts über 3 m (unter "+Math.round(r*100)+"%)",base:{fplR:r}};
+    case "exD":return {id:"exD",label:"Spiel 2: weniger als "+v.exD+" über Soll",base:{exD:v.exD}};
+    case "exE":return {id:"exE",label:"Spiel 1: weniger als "+v.exE+" über Soll",base:{exE:v.exE}};
+    default:return null;
+  }
+}
+function goalCheck(g,v){
+  if(!g)return null;
+  switch(g.id){
+    case "pen":return v.pen===0;
+    case "tp":return v.tp<g.base.tp;
+    case "fpl":return v.fplN>0?(v.fplL/v.fplN)<g.base.fplR:null;
+    case "exD":return v.exD<g.base.exD;
+    case "exE":return v.exE<g.base.exE;
+  }
+  return null;
 }
 
 /* ---------- Loch ---------- */
@@ -540,6 +572,13 @@ function renderEval(){
   }
 
   if(s.n>0){
+    if(state.goal){
+      var gok=goalCheck(state.goal,s);
+      html+="<h3>"+IC.goal+"Ziel dieser Runde</h3>"
+        +"<div class='goalbox'><span>"+state.goal.label+"</span>"
+        +(gok===null?"<span class='gst'>offen</span>":gok?"<span class='gst ck'>✓ auf Kurs</span>":"<span class='gst pn'>✕ gerissen</span>")
+        +"</div>";
+    }
     var lost=s.exE+s.exD, pE=lost?Math.round(s.exE/lost*100):50;
     var verdict;
     if(lost===0)verdict="Beide Spiele im Soll – Zeit, die Zone näher ans Grün zu legen.";
@@ -571,6 +610,16 @@ function renderEval(){
   }
   else if(state.history.length){
     var lr=state.history[state.history.length-1];
+    if(lr.goal){
+      html+="<h3>"+IC.goal+"Ziel-Check · Runde vom "+lr.d+"</h3>"
+        +"<div class='goalbox'><span>"+lr.goal.label+"</span>"
+        +(lr.goal.ok===null?"<span class='gst'>nicht bewertbar</span>":lr.goal.ok?"<span class='gst ck'>✓ geschafft</span>":"<span class='gst pn'>✕ nicht geschafft</span>")
+        +"</div>";
+    }
+    if(state.goal){
+      html+="<h3>"+IC.goal+"Nächstes Ziel</h3>"
+        +"<div class='goalbox'><span>"+state.goal.label+"</span></div>";
+    }
     if(lr.exE!==undefined){
       html+="<h3>"+IC.train+"Training – nur Nr. 1 · Runde vom "+lr.d+"</h3>";
       html+=drillsHtml(lr);
@@ -630,11 +679,13 @@ function finishRound(){
   var s=roundStats(state.holes,state.pars);
   if(s.n===0)return;
   var d=new Date();
+  var gres=state.goal?{label:state.goal.label,ok:goalCheck(state.goal,s)}:null;
   state.history.push({
     d:("0"+d.getDate()).slice(-2)+"."+("0"+(d.getMonth()+1)).slice(-2)+".",
     n:s.n,sc:s.sc,par:s.par,szir:s.szir,pen:s.pen,tp:s.tp,dsz:+s.dszAvg.toFixed(2),
-    exE:s.exE,exD:s.exD,fplL:s.fplL,fplN:s.fplN
+    exE:s.exE,exD:s.exD,fplL:s.fplL,fplN:s.fplN,goal:gres
   });
+  state.goal=goalFrom(s);
   if(state.history.length>30)state.history.shift();
   clearRound();
   document.querySelector("nav button[data-view='v-eval']").click();
