@@ -395,6 +395,7 @@ var IC={
   train:svg('<path d="M6 7v10M18 7v10"/><rect x="3" y="9" width="3" height="6" rx="1"/><rect x="18" y="9" width="3" height="6" rx="1"/><path d="M6 12h12"/>'),
   hist:svg('<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>'),
   goal:svg('<path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M17 5h3a2 2 0 0 1-2 3h-1"/><path d="M7 5H4a2 2 0 0 0 2 3h1"/>'),
+  flame:svg('<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>'),
   sig:svg('<path d="M18 4H6l7 8-7 8h12"/>'),
   trash:svg('<path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>')
 };
@@ -439,7 +440,7 @@ function scHtml(i){
   return mk?"<span class='sc-mark "+mk+"'>"+t+"</span>":""+t;
 }
 function roundStats(holes,pars){
-  var s={n:0,sc:0,par:0,szir:0,pen:0,tp:0,dszSum:0,dszN:0,exE:0,exD:0,fplL:0,fplN:0};
+  var s={n:0,sc:0,par:0,szir:0,pen:0,tp:0,dszSum:0,dszN:0,exE:0,exD:0,fplL:0,fplN:0,bu:0,buX:0};
   holes.forEach(function(x,i){
     var p=x.esz!==null||x.dsz!==null;
     s.pen+=x.pen; s.tp+=x.tp?1:0;
@@ -449,6 +450,7 @@ function roundStats(holes,pars){
     var base=pars[i]-2;
     if(x.esz!==null){s.exE+=Math.max(0,x.esz-base);if(x.esz<=base)s.szir++;}
     if(x.dsz!==null){s.exD+=Math.max(0,x.dsz-3);s.dszSum+=x.dsz;s.dszN++;}
+    if(x.esz!==null&&x.dsz!==null){var df=x.esz+x.dsz-pars[i];if(df>=2){s.bu++;s.buX+=df-1;}}
   });
   s.dszAvg=s.dszN?s.dszSum/s.dszN:0;
   return s;
@@ -456,6 +458,7 @@ function roundStats(holes,pars){
 function drillList(v){
   var dr=[];
   if(v.pen>0)dr.push({id:"pen",w:v.pen*3,t:"Null-Strafen-Challenge",d:v.pen+" Strafschläge ≈ "+(v.pen*2)+"+ verlorene Schläge. Nächste Runde zählt nur eins: keine Strafe, kein seitliches Rausschlagen. Go-To-Schläger vom Tee."});
+  if(v.buX>=3)dr.push({id:"bu",w:v.buX,t:"Doppel-Bogey-Stopp",d:v.bu+" Blow-up-"+(v.bu===1?"Loch":"Löcher")+" ("+v.buX+" Schläge über Bogey). Regel: nach zwei schlechten Schlägen kein Heldenschlag mehr – raus aufs Fairway, Bogey akzeptieren. Bogey ist okay, Triple nicht."});
   if(v.tp>=2)dr.push({id:"tp",w:v.tp*2,t:"Tempo-Putts (Wellputt)",d:v.tp+" 3-Putts. 20 Min Lag-Putts aus 2–3 m: ankommen, max. 50 cm vorbei. Abschluss: 10/10 aus 1 m in den PuttOUT."});
   if(v.fplN&&v.fplL/v.fplN>0.4)dr.push({id:"fpl",w:4+v.fplL,t:"Wedge-Distanzen kalibrieren",d:"Erste Putts zu lang = Annäherungsproblem. Je 10 Bälle auf 30/50/70 m, drei Schwunglängen, Carrys notieren."});
   if(v.exD>v.exE)dr.push({id:"exD",w:v.exD,t:"Ein Chip, ein Schläger",d:"Standard-Chip mit dem PW: Ball zurück, Hände vor, Grün treffen, rollen lassen. 30 Wiederholungen auf ein 3-m-Ziel."});
@@ -476,6 +479,7 @@ function goalFrom(v){
   var top=drillList(v)[0];
   switch(top.id){
     case "pen":return {id:"pen",label:"Keine Strafschläge",base:{}};
+    case "bu":return {id:"bu",label:"Höchstens "+(v.bu-1)+" Blow-up-"+(v.bu-1===1?"Loch":"Löcher")+" (Doppel-Bogey+)",base:{bu:v.bu}};
     case "tp":return {id:"tp",label:"Höchstens "+(v.tp-1)+" 3-Putt"+(v.tp-1===1?"":"s"),base:{tp:v.tp}};
     case "fpl":var r=v.fplL/v.fplN;return {id:"fpl",label:"Weniger erste Putts über 3 m (unter "+Math.round(r*100)+"%)",base:{fplR:r}};
     case "exD":return {id:"exD",label:"Spiel 2: weniger als "+v.exD+" über Soll",base:{exD:v.exD}};
@@ -487,6 +491,7 @@ function goalCheck(g,v){
   if(!g)return null;
   switch(g.id){
     case "pen":return v.pen===0;
+    case "bu":return v.bu<g.base.bu;
     case "tp":return v.tp<g.base.tp;
     case "fpl":return v.fplN>0?(v.fplL/v.fplN)<g.base.fplR:null;
     case "exD":return v.exD<g.base.exD;
@@ -565,6 +570,7 @@ function renderEval(){
   var c=document.getElementById("evalContent");
   var s=roundStats(state.holes,state.pars);
   var html="";
+  function fp(v){return (v>=0?"+":"")+v;}
 
   if(s.n===0&&state.history.length===0){
     c.innerHTML="<div class='empty'>Noch keine Daten – trag im ersten Tab eine Runde ein.</div>";
@@ -605,6 +611,19 @@ function renderEval(){
       +cell(IC.sig,(s.sc-s.par>=0?"+":"")+(s.sc-s.par),""+s.sc,"")
       +"</div>";
 
+    html+="<h3>"+IC.flame+"Blow-up-Löcher</h3>";
+    if(s.bu===0){
+      html+="<p class='verdict'>Kein Doppel-Bogey oder schlechter – stabile Runde.</p>";
+    }else{
+      var buList=[];
+      state.holes.forEach(function(x,i){
+        if(x.esz!==null&&x.dsz!==null){var df=x.esz+x.dsz-state.pars[i];if(df>=2)buList.push((i+1)+" (+"+df+")");}
+      });
+      html+="<p class='verdict'>"+s.bu+" "+(s.bu===1?"Loch":"Löcher")+" mit Doppel-Bogey oder schlechter: Loch "+buList.join(", ")
+        +". Kostet <b>"+s.buX+" Schläge</b> gegenüber Bogey – wären es Bogeys, stündest du bei "
+        +fp(s.sc-s.par-s.buX)+" statt "+fp(s.sc-s.par)+".</p>";
+    }
+
     html+="<h3>"+IC.train+"Training – nur Nr. 1</h3>";
     html+=drillsHtml(s);
   }
@@ -619,6 +638,12 @@ function renderEval(){
     if(state.goal){
       html+="<h3>"+IC.goal+"Nächstes Ziel</h3>"
         +"<div class='goalbox'><span>"+state.goal.label+"</span></div>";
+    }
+    if(lr.bu!==undefined){
+      html+="<h3>"+IC.flame+"Blow-up-Löcher · Runde vom "+lr.d+"</h3>";
+      html+=lr.bu===0
+        ?"<p class='verdict'>Kein Doppel-Bogey oder schlechter – stabile Runde.</p>"
+        :"<p class='verdict'>"+lr.bu+" "+(lr.bu===1?"Loch":"Löcher")+" mit Doppel-Bogey oder schlechter. Kostet <b>"+lr.buX+" Schläge</b> gegenüber Bogey – wären es Bogeys, stündest du bei "+fp(lr.sc-lr.par-lr.buX)+" statt "+fp(lr.sc-lr.par)+".</p>";
     }
     if(lr.exE!==undefined){
       html+="<h3>"+IC.train+"Training – nur Nr. 1 · Runde vom "+lr.d+"</h3>";
@@ -683,7 +708,7 @@ function finishRound(){
   state.history.push({
     d:("0"+d.getDate()).slice(-2)+"."+("0"+(d.getMonth()+1)).slice(-2)+".",
     n:s.n,sc:s.sc,par:s.par,szir:s.szir,pen:s.pen,tp:s.tp,dsz:+s.dszAvg.toFixed(2),
-    exE:s.exE,exD:s.exD,fplL:s.fplL,fplN:s.fplN,goal:gres
+    exE:s.exE,exD:s.exD,fplL:s.fplL,fplN:s.fplN,bu:s.bu,buX:s.buX,goal:gres
   });
   state.goal=goalFrom(s);
   if(state.history.length>30)state.history.shift();
