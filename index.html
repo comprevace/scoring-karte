@@ -447,6 +447,21 @@ function roundStats(holes,pars){
   s.dszAvg=s.dszN?s.dszSum/s.dszN:0;
   return s;
 }
+function drillsHtml(v){
+  var dr=[];
+  if(v.pen>0)dr.push({w:v.pen*3,t:"Null-Strafen-Challenge",d:v.pen+" Strafschläge ≈ "+(v.pen*2)+"+ verlorene Schläge. Nächste Runde zählt nur eins: keine Strafe, kein seitliches Rausschlagen. Go-To-Schläger vom Tee."});
+  if(v.tp>=2)dr.push({w:v.tp*2,t:"Tempo-Putts (Wellputt)",d:v.tp+" 3-Putts. 20 Min Lag-Putts aus 2–3 m: ankommen, max. 50 cm vorbei. Abschluss: 10/10 aus 1 m in den PuttOUT."});
+  if(v.fplN&&v.fplL/v.fplN>0.4)dr.push({w:4+v.fplL,t:"Wedge-Distanzen kalibrieren",d:"Erste Putts zu lang = Annäherungsproblem. Je 10 Bälle auf 30/50/70 m, drei Schwunglängen, Carrys notieren."});
+  if(v.exD>v.exE)dr.push({w:v.exD,t:"Ein Chip, ein Schläger",d:"Standard-Chip mit dem PW: Ball zurück, Hände vor, Grün treffen, rollen lassen. 30 Wiederholungen auf ein 3-m-Ziel."});
+  if(v.exE>=v.exD&&v.exE>0)dr.push({w:v.exE,t:"Kontakt vor Länge",d:"Engpass ist Spiel 1 – das ist Schwungtraining: kontrollierter ¾-Schwung mit dem 7er/8er, Ziel Mitte Fairway."});
+  if(!dr.length)dr.push({w:0,t:"Einen Gang hochschalten",d:"Alles im Soll. Neues Ziel: in Regulation auf 75 m statt 90 m, DSZ-Soll unter 3."});
+  dr.sort(function(a,b){return b.w-a.w;});
+  var h="";
+  dr.slice(0,3).forEach(function(d,i){
+    h+="<div class='drill'><div class='n'>"+(i+1)+"</div><div><h4>"+d.t+"</h4><p>"+d.d+"</p></div></div>";
+  });
+  return h;
+}
 
 /* ---------- Loch ---------- */
 function renderHole(){
@@ -552,17 +567,14 @@ function renderEval(){
       +"</div>";
 
     html+="<h3>"+IC.train+"Training – nur Nr. 1</h3>";
-    var dr=[];
-    if(s.pen>0)dr.push({w:s.pen*3,t:"Null-Strafen-Challenge",d:s.pen+" Strafschläge ≈ "+(s.pen*2)+"+ verlorene Schläge. Nächste Runde zählt nur eins: keine Strafe, kein seitliches Rausschlagen. Go-To-Schläger vom Tee."});
-    if(s.tp>=2)dr.push({w:s.tp*2,t:"Tempo-Putts (Wellputt)",d:s.tp+" 3-Putts. 20 Min Lag-Putts aus 2–3 m: ankommen, max. 50 cm vorbei. Abschluss: 10/10 aus 1 m in den PuttOUT."});
-    if(s.fplN&&s.fplL/s.fplN>0.4)dr.push({w:4+s.fplL,t:"Wedge-Distanzen kalibrieren",d:"Erste Putts zu lang = Annäherungsproblem. Je 10 Bälle auf 30/50/70 m, drei Schwunglängen, Carrys notieren."});
-    if(s.exD>s.exE)dr.push({w:s.exD,t:"Ein Chip, ein Schläger",d:"Standard-Chip mit dem PW: Ball zurück, Hände vor, Grün treffen, rollen lassen. 30 Wiederholungen auf ein 3-m-Ziel."});
-    if(s.exE>=s.exD&&s.exE>0)dr.push({w:s.exE,t:"Kontakt vor Länge",d:"Engpass ist Spiel 1 – das ist Schwungtraining: kontrollierter ¾-Schwung mit dem 7er/8er, Ziel Mitte Fairway."});
-    if(!dr.length)dr.push({w:0,t:"Einen Gang hochschalten",d:"Alles im Soll. Neues Ziel: in Regulation auf 75 m statt 90 m, DSZ-Soll unter 3."});
-    dr.sort(function(a,b){return b.w-a.w;});
-    dr.slice(0,3).forEach(function(d,i){
-      html+="<div class='drill'><div class='n'>"+(i+1)+"</div><div><h4>"+d.t+"</h4><p>"+d.d+"</p></div></div>";
-    });
+    html+=drillsHtml(s);
+  }
+  else if(state.history.length){
+    var lr=state.history[state.history.length-1];
+    if(lr.exE!==undefined){
+      html+="<h3>"+IC.train+"Training – nur Nr. 1 · Runde vom "+lr.d+"</h3>";
+      html+=drillsHtml(lr);
+    }
   }
 
   if(state.history.length){
@@ -620,7 +632,8 @@ function finishRound(){
   var d=new Date();
   state.history.push({
     d:("0"+d.getDate()).slice(-2)+"."+("0"+(d.getMonth()+1)).slice(-2)+".",
-    n:s.n,sc:s.sc,par:s.par,szir:s.szir,pen:s.pen,tp:s.tp,dsz:+s.dszAvg.toFixed(2)
+    n:s.n,sc:s.sc,par:s.par,szir:s.szir,pen:s.pen,tp:s.tp,dsz:+s.dszAvg.toFixed(2),
+    exE:s.exE,exD:s.exD,fplL:s.fplL,fplN:s.fplN
   });
   if(state.history.length>30)state.history.shift();
   clearRound();
